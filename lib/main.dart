@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'dart:io' show Platform;
 import 'package:transparent_image/transparent_image.dart';
 import 'package:flutter_inappbrowser/flutter_inappbrowser.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'dart:convert';
 import 'package:dbcrypt/dbcrypt.dart';
+import 'package:local_auth/local_auth.dart';
+import 'package:local_auth/auth_strings.dart';
+import 'package:local_auth/error_codes.dart' as auth_error;
 
 void main() => runApp(MyApp());
 
@@ -62,8 +67,9 @@ class FirstRoute extends StatefulWidget {
 //}
 
 class FirstRouteStage extends State<FirstRoute> {
+  static LocalAuthentication auth = LocalAuthentication();
   static InAppWebViewController webView;
-  static String initialUrl = "https://flutter.io/";
+  static String initialUrl = "https://flutter.dev/";
   static BuildContext ctx;
   int _selectedIndex = 0;
   bool checkFirst = false;
@@ -151,6 +157,45 @@ class FirstRouteStage extends State<FirstRoute> {
                 ctx,
                 MaterialPageRoute(builder: (context) => SecondRoute()),
               );
+            },
+          ),
+          RaisedButton(
+            child: Text('Check Biomatric'),
+            onPressed:  () async {
+              try{
+                print("Click is handle");
+                bool canCheckBiometrics = await auth.canCheckBiometrics;
+                if(canCheckBiometrics) {
+                  List<BiometricType> availableBiometrics = await auth.getAvailableBiometrics();
+
+                  print("Click is ended $canCheckBiometrics");
+                  if (Platform.isIOS) {
+                    if (availableBiometrics.contains(BiometricType.face)) {
+                      print('Face id is available');
+                    } else if (availableBiometrics.contains(BiometricType.fingerprint)) {
+                      print('Torch id is available');
+                    }
+                  } else if(Platform.isAndroid){
+                    print("Platform ${Platform.isAndroid}");
+                    print(availableBiometrics);
+                    if (availableBiometrics.contains(BiometricType.face)) {
+                      print('Face scanner is available');
+                    } else if (availableBiometrics.contains(BiometricType.fingerprint)) {
+                      print('Finger print is available');
+                    }
+                    for(var i in availableBiometrics){
+                      print(i);
+                    }
+                  }
+                }  else {
+                  print("Cannot check biometric");
+                }
+              } on PlatformException catch(e) {
+                print(e);
+                if(e.code == auth_error.notAvailable){
+                  print('Not available');
+                }
+              }
             },
           ),
         ],
@@ -355,47 +400,54 @@ class ThirdRouteState extends State<ThirdRoute> {
             Scaffold(
               body: RefreshIndicator(
                 key: _refreshIndicatorKey,
-                child:  Stack(
-                  children: <Widget>[
-                    Center(child: (news.length <= 0)?CircularProgressIndicator():Text('')),
-                    StaggeredGridView.countBuilder(
-                      crossAxisCount: 1,
-                      itemCount: news.length,
-                      itemBuilder: (context, index) {
-                        return Card(
-                            child: Column(
-                              children: <Widget>[
-                                Text(
-                                  '${news[index]['author']}',
-                                  style: new TextStyle(
-                                    fontSize: 25.0,
-                                  ),
-                                ),
-                                FadeInImage.assetNetwork(
-                                  placeholder: "images/ic_loader.gif",
-                                  image: '${news[index]['urlToImage']}',
-                                ),
-                                /*Stack(
-                                children: <Widget>[
-                                  Center(child: Image.asset("images/ic_loading.gif") *//*CircularProgressIndicator()*//*),
-                                  Center(child: Icon(Icons.image, color: Colors.grey,), heightFactor: 10.65,),
-                                  Center(
-                                    child: Image.network(
-                                      '${news[index]['urlToImage']}',
-                                    ),
-                                  ),
-                                ],
-                              ),*/
-                                Text('${news[index]['content']}',),
-                              ],
-                            )
-                        );
-                      },
-                      staggeredTileBuilder: (int index) => StaggeredTile.fit(1),
-                      mainAxisSpacing: 0.0,
-                      crossAxisSpacing: 1.0,
-                    ),
-                  ],
+                child:  Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Row(
+                    children: <Widget>[
+                      Stack(
+                        children: <Widget>[
+                          Center(child: (news.length <= 0)?CircularProgressIndicator():Text('')),
+                          StaggeredGridView.countBuilder(
+                            crossAxisCount: 1,
+                            itemCount: news.length,
+                            itemBuilder: (context, index) {
+                              return Card(
+                                  child: Column(
+                                    children: <Widget>[
+                                      Text(
+                                        '${news[index]['author']}',
+                                        style: new TextStyle(
+                                          fontSize: 25.0,
+                                        ),
+                                      ),
+                                      FadeInImage.assetNetwork(
+                                        placeholder: "images/ic_loader.gif",
+                                        image: '${news[index]['urlToImage']}',
+                                      ),
+                                      /*Stack(
+                                      children: <Widget>[
+                                        Center(child: Image.asset("images/ic_loading.gif") *//*CircularProgressIndicator()*//*),
+                                        Center(child: Icon(Icons.image, color: Colors.grey,), heightFactor: 10.65,),
+                                        Center(
+                                          child: Image.network(
+                                            '${news[index]['urlToImage']}',
+                                          ),
+                                        ),
+                                      ],
+                                    ),*/
+                                      Text('${news[index]['content']}',),
+                                    ],
+                                  )
+                              );
+                            },
+                            staggeredTileBuilder: (int index) => StaggeredTile.fit(1),
+                            mainAxisSpacing: 0.0,
+                            crossAxisSpacing: 1.0,
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
                 onRefresh: getNews,
               )
