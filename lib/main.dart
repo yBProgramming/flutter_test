@@ -10,6 +10,9 @@ import 'package:dbcrypt/dbcrypt.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:local_auth/auth_strings.dart';
 import 'package:local_auth/error_codes.dart' as auth_error;
+//import 'package:interactive_webview/interactive_webview.dart';
+
+import 'package:flutter/foundation.dart';
 
 void main() => runApp(MyApp());
 
@@ -69,13 +72,37 @@ class FirstRoute extends StatefulWidget {
 class FirstRouteStage extends State<FirstRoute> {
   static LocalAuthentication auth = LocalAuthentication();
   static InAppWebViewController webView;
-  static String initialUrl = "https://flutter.dev/";
+  static String initialUrl = "http://10.0.10.72:8080/";
   static BuildContext ctx;
+  // static final _webView = new InteractiveWebView();
+
   int _selectedIndex = 0;
   bool checkFirst = false;
   FirstRouteStage() {
     //webView.reload();
   }
+  @override
+  void initState() {
+    super.initState();
+//    _webViewHandler();
+  }
+
+  /*_webViewHandler() async {
+    _webView.loadUrl("http://10.0.10.72:8080/");
+
+    _webView.didReceiveMessage.listen((message) {
+      print("OK as well");
+      print(message.data);
+    });
+
+    _webView.stateChanged.listen((state) {
+      print("stateChanged ${state.type} ${state.url}");
+    });
+
+    final html = await rootBundle.loadString("assets/index.html", cache: false);
+    _webView.loadHTML(html, baseUrl: initialUrl);
+  }*/
+
   @override
   Widget build(BuildContext context) {
 
@@ -130,17 +157,29 @@ class FirstRouteStage extends State<FirstRoute> {
       onWebViewCreated: (InAppWebViewController controller) {
         webView = controller;
       },
+      onConsoleMessage: (InAppWebViewController controller, ConsoleMessage consoleMessage){
+        print(consoleMessage.message);
+      },
       onLoadStart: (InAppWebViewController controller, String url) async {
         print("started $url");
         if ((initialUrl != url)) {
           controller.stopLoading();
           await Navigator.push(ctx, MaterialPageRoute(builder: (context) => WebViewRoute(webview_url: url)),);
-          controller.loadUrl(initialUrl);
+          //controller.loadUrl(initialUrl);
           print("After push");
         } else {
           print("old url");
         }
-      }
+      },
+      onLoadStop: (InAppWebViewController controller, String url){
+        controller.injectScriptCode("""
+              console.log(`--------------------------------------------------`);
+              window['token'] = 'hahaha-mndkndknfkdkfkdnkf';
+              console.log("OK I am work as well");
+              console.log(window.token);
+              console.log(`--------------------------------------------------`);
+          """);
+      },
     ),
   ),
     Scaffold(
@@ -182,15 +221,30 @@ class FirstRouteStage extends State<FirstRoute> {
                       print('Face scanner is available');
                     } else if (availableBiometrics.contains(BiometricType.fingerprint)) {
                       print('Finger print is available');
-                    }
-                    for(var i in availableBiometrics){
-                      print(i);
+                      bool didAuthenticate =
+                      await auth.authenticateWithBiometrics( localizedReason: 'Please authenticate your account' );
+                      if(didAuthenticate){
+                        print("Authentication is passed");
+                      } else {
+                        print("Authentication is not passed");
+                      }
+                    } else {
+                      print('Finger print is not available');
+                      const androidStrings = const AndroidAuthMessages(
+                          cancelButton: 'cancel',
+                          goToSettingsButton: 'settings',
+                          goToSettingsDescription: 'Please set up your Finger Print.');
+                      await auth.authenticateWithBiometrics(
+                          localizedReason: 'Please authenticate to show account balance',
+                          useErrorDialogs: false,
+                          androidAuthStrings: androidStrings);
                     }
                   }
                 }  else {
                   print("Cannot check biometric");
                 }
               } on PlatformException catch(e) {
+                print("Error: ");
                 print(e);
                 if(e.code == auth_error.notAvailable){
                   print('Not available');
@@ -205,9 +259,21 @@ class FirstRouteStage extends State<FirstRoute> {
       appBar: AppBar(
         title: Text('First Route tab 2'),
       ),
-      body: Text(new DBCrypt().hashpw("hellobcrypt",new DBCrypt().gensaltWithRounds(10))),
+      body: Column(
+        children: <Widget>[
+          Text(new DBCrypt().hashpw("hellobcrypt",new DBCrypt().gensaltWithRounds(10))),
+          RaisedButton(
+              onPressed: () {
+                final text = "Hello from Native!!!";
+//                _webView.evalJavascript("test('$text')");
+              },
+              child: Text("Send to WebView")
+          ),
+        ],
+      ),
     ),
   ];
+
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
@@ -495,16 +561,28 @@ class WebViewRouteStage extends State<WebViewRoute> {
         onWebViewCreated: (InAppWebViewController controller) {
           webView = controller;
         },
+        onConsoleMessage: (InAppWebViewController controller, ConsoleMessage consoleMessage){
+          print(consoleMessage.message);
+        },
         onLoadStart: (InAppWebViewController controller, String url) async {
           print("Old: " + initialUrl);
           print("New: " + url);
           if ((initialUrl != url)) {
             controller.stopLoading();
             await Navigator.push(context, MaterialPageRoute(builder: (context) => WebViewRoute(webview_url: url)),);
-            controller.loadUrl(initialUrl);
+            //controller.loadUrl(initialUrl);
           } else {
             print("old url");
           }
+        },
+        onLoadStop: (InAppWebViewController controller, String url){
+          controller.injectScriptCode("""
+              console.log(`--------------------------------------------------`);
+              window['token'] = 'hahaha-mndkndknfkdkfkdnkf';
+              console.log("OK I am work as well");
+              console.log(window.token);
+              console.log(`--------------------------------------------------`);
+          """);
         },
         onProgressChanged: (InAppWebViewController controller, int progress) {
           setState(() {

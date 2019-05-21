@@ -1,0 +1,10 @@
+
+<script>
+    const nativeCommunicator = typeof webkit !== 'undefined' ? webkit.messageHandlers.native : window.native;
+    function test(text) {
+        alert(text)
+      console.log(`received from native ${text}`);
+      const data = [{name: "Hello"}, 1, true, "from", "WebView!!!"];
+      nativeCommunicator.postMessage(JSON.stringify(data));
+    }
+</script>
