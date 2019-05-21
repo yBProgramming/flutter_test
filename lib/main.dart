@@ -11,6 +11,7 @@ import 'package:local_auth/local_auth.dart';
 import 'package:local_auth/auth_strings.dart';
 import 'package:local_auth/error_codes.dart' as auth_error;
 //import 'package:interactive_webview/interactive_webview.dart';
+import 'static_variable.dart' as stvb;
 
 import 'package:flutter/foundation.dart';
 
@@ -174,7 +175,7 @@ class FirstRouteStage extends State<FirstRoute> {
       onLoadStop: (InAppWebViewController controller, String url){
         controller.injectScriptCode("""
               console.log(`--------------------------------------------------`);
-              window['token'] = 'hahaha-mndkndknfkdkfkdnkf';
+              window['token'] = '${stvb.static_variable.user_token}';
               console.log("OK I am work as well");
               console.log(window.token);
               console.log(`--------------------------------------------------`);
@@ -399,7 +400,7 @@ class ThirdRoute extends StatefulWidget {
 }
 
 class ThirdRouteState extends State<ThirdRoute> {
-  static String initialUrl = "https://flutter.io/";
+  static String initialUrl = "https://flutter.dev/";
   final GlobalKey<RefreshIndicatorState> _refreshIndicatorKey = new GlobalKey<RefreshIndicatorState>();
   var news = [];
   InAppWebViewController webView;
@@ -408,10 +409,10 @@ class ThirdRouteState extends State<ThirdRoute> {
   }
   @override
   void initState() {
+    super.initState();
     if(mounted) {
       getNews();
     }
-    super.initState();
   }
   Future<Null>  getNews(){
     var d = new DateTime.now();
@@ -422,6 +423,7 @@ class ThirdRouteState extends State<ThirdRoute> {
       print("Length: ${news.length}");
       setState(() {
         news = jsonDecode(res.body)['articles'];
+        print("Length: ${news.length}");
       });
     });
   }
@@ -470,48 +472,50 @@ class ThirdRouteState extends State<ThirdRoute> {
                   padding: const EdgeInsets.all(8.0),
                   child: Row(
                     children: <Widget>[
-                      Stack(
-                        children: <Widget>[
-                          Center(child: (news.length <= 0)?CircularProgressIndicator():Text('')),
-                          StaggeredGridView.countBuilder(
-                            crossAxisCount: 1,
-                            itemCount: news.length,
-                            itemBuilder: (context, index) {
-                              return Card(
-                                  child: Column(
-                                    children: <Widget>[
-                                      Text(
-                                        '${news[index]['author']}',
-                                        style: new TextStyle(
-                                          fontSize: 25.0,
-                                        ),
-                                      ),
-                                      FadeInImage.assetNetwork(
-                                        placeholder: "images/ic_loader.gif",
-                                        image: '${news[index]['urlToImage']}',
-                                      ),
-                                      /*Stack(
+                      Expanded(
+                        child: Stack(
+                          children: <Widget>[
+                            Center(child: (news.length <= 0)?CircularProgressIndicator():Text('')),
+                            StaggeredGridView.countBuilder(
+                              crossAxisCount: 1,
+                              itemCount: news.length,
+                              itemBuilder: (context, index) {
+                                return Card(
+                                    child: Column(
                                       children: <Widget>[
-                                        Center(child: Image.asset("images/ic_loading.gif") *//*CircularProgressIndicator()*//*),
-                                        Center(child: Icon(Icons.image, color: Colors.grey,), heightFactor: 10.65,),
-                                        Center(
-                                          child: Image.network(
-                                            '${news[index]['urlToImage']}',
+                                        Text(
+                                          '${news[index]['author']}',
+                                          style: new TextStyle(
+                                            fontSize: 25.0,
                                           ),
                                         ),
+                                        FadeInImage.assetNetwork(
+                                          placeholder: "images/ic_loader.gif",
+                                          image: '${news[index]['urlToImage']}',
+                                        ),
+                                        /*Stack(
+                                        children: <Widget>[
+                                          Center(child: Image.asset("images/ic_loading.gif") *//*CircularProgressIndicator()*//*),
+                                          Center(child: Icon(Icons.image, color: Colors.grey,), heightFactor: 10.65,),
+                                          Center(
+                                            child: Image.network(
+                                              '${news[index]['urlToImage']}',
+                                            ),
+                                          ),
+                                        ],
+                                      ),*/
+                                        Text('${news[index]['content']}',),
                                       ],
-                                    ),*/
-                                      Text('${news[index]['content']}',),
-                                    ],
-                                  )
-                              );
-                            },
-                            staggeredTileBuilder: (int index) => StaggeredTile.fit(1),
-                            mainAxisSpacing: 0.0,
-                            crossAxisSpacing: 1.0,
-                          ),
-                        ],
-                      ),
+                                    )
+                                );
+                              },
+                              staggeredTileBuilder: (int index) => StaggeredTile.fit(1),
+                              mainAxisSpacing: 0.0,
+                              crossAxisSpacing: 1.0,
+                            ),
+                          ],
+                        ),
+                      )
                     ],
                   ),
                 ),
@@ -578,7 +582,7 @@ class WebViewRouteStage extends State<WebViewRoute> {
         onLoadStop: (InAppWebViewController controller, String url){
           controller.injectScriptCode("""
               console.log(`--------------------------------------------------`);
-              window['token'] = 'hahaha-mndkndknfkdkfkdnkf';
+              window['token'] = '${stvb.static_variable.user_token}';
               console.log("OK I am work as well");
               console.log(window.token);
               console.log(`--------------------------------------------------`);
